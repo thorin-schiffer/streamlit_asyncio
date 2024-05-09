@@ -26,21 +26,24 @@ async def init_database(client):
     database = client.get_database(name='asyncio_streamlit_db')
     await init_beanie(database=database, document_models=[Product])
 
+COUNT = 10
 
 async def fetch_data():
     count = await Product.find(fetch_links=True).count()
-    if not count:
-        await Product(name='test').save()
-    return await Product.find(fetch_links=True).to_list()
+    if count < COUNT:
+        for i in range(COUNT):
+            await Product(name='test').save()
+    return await Product.find(fetch_links=True).limit(COUNT).to_list()
 
 
 async def main():
-    client = get_client()
-    await init_database(client)
+    if not st.session_state.get('client'):
+        st.session_state.client = get_client()
+        await init_database(st.session_state.client)
     products = await fetch_data()
     for product in products:
         st.write(product)
-
+    st.button("Quick rerun")
 
 if __name__ == '__main__':
     asyncio.run(main())
